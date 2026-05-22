@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Visualizador de variables climáticas de Caquetá y Amazonas en escala diaria, semanal y mensual. Panel de control interactivo con mapa de localidades y gráficos climáticos dinámicos.">
+    <meta name="author" content="Agroclimatic Modeling Team">
+    <title>Visor de Clima PMA - Dashboard Interactivo</title>
+    
+    <!-- CDNs de Librerías Externas (Estilos) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <!-- Estilos de Diseño Premium del Dashboard -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Overlay de Pantalla de Carga y Errores CORS -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>Cargando datos climáticos...</p>
+    </div>
+
+    <div class="app-container">
+        <!-- Encabezado del Dashboard -->
+        <header>
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <i data-lucide="cloud-lightning" style="width: 28px; height: 28px; color: #fff;"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>Visor de Clima PMA</h1>
+                    <p>Monitoreo Agroclimático en Caquetá y Amazonas</p>
+                </div>
+            </div>
+            <div class="header-meta">
+                <div class="meta-info">
+                    <div>Escala Espacial: <b>Localidades</b></div>
+                    <div class="meta-status">
+                        <span class="pulse"></span>
+                        <span>Conectado al Excel</span>
+                    </div>
+                </div>
+                <button id="theme-toggle-btn" class="theme-btn" aria-label="Cambiar tema de color">
+                    <i data-lucide="sun" class="sun-icon"></i>
+                    <i data-lucide="moon" class="moon-icon"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Contenedor Principal (Panel Izquierdo / Panel Derecho) -->
+        <main class="main-grid">
+            
+            <!-- Panel Izquierdo: Selección y Mapa -->
+            <section class="left-panel">
+                <!-- Tarjeta de Controles -->
+                <div class="glass-card">
+                    <h2 class="panel-title">
+                        <i data-lucide="sliders" style="width: 20px; height: 20px; color: var(--primary);"></i>
+                        Selección de Localidad
+                    </h2>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">
+                        Selecciona una localidad en la lista o haz clic en un marcador azul en el mapa para cargar su información climática dinámica:
+                    </p>
+                    <div class="select-wrapper">
+                        <select id="locality-select" class="select-control" aria-label="Seleccionar localidad de clima">
+                            <option value="" disabled selected>Cargando localidades...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Tarjeta del Mapa -->
+                <div class="glass-card" style="padding: 16px;">
+                    <h2 class="panel-title" style="margin-bottom: 12px; border:none; padding: 0 8px;">
+                        <i data-lucide="map-pin" style="width: 20px; height: 20px; color: var(--temp-min);"></i>
+                        Mapa de Ubicaciones
+                    </h2>
+                    <div class="map-container">
+                        <div id="map" aria-label="Mapa interactivo con las localidades del proyecto"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Panel Derecho: Estadísticas y Gráficos -->
+            <section class="right-panel">
+                
+                <!-- Encabezado de Localidad Activa y Selector Temporal -->
+                <div class="glass-card" style="padding: 20px 24px 10px 24px;">
+                    <div class="tabs-header">
+                        <div class="active-locality-title">
+                            <h2 id="active-locality-name">Selecciona una Localidad</h2>
+                            <p id="active-locality-coords">Cargando coordenadas geográficas...</p>
+                        </div>
+                        <div class="tabs-control">
+                            <button class="tab-btn active" data-scale="daily" aria-label="Ver datos diarios">Diario</button>
+                            <button class="tab-btn" data-scale="weekly" aria-label="Ver agregación semanal">Semanal</button>
+                            <button class="tab-btn" data-scale="monthly" aria-label="Ver agregación mensual">Mensual</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fila de Estadísticas Rápidas -->
+                <div class="stats-row">
+                    <!-- Tarjeta: Lluvia Acumulada -->
+                    <article class="stat-card" id="stat-prec">
+                        <div class="stat-icon prec">
+                            <i data-lucide="droplets" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Lluvia Total</span>
+                            <span class="stat-value" id="stat-prec-val">--</span>
+                            <span class="stat-sub" id="stat-prec-sub">Cargando...</span>
+                        </div>
+                    </article>
+
+                    <!-- Tarjeta: Temp Máxima Histórica del periodo -->
+                    <article class="stat-card" id="stat-tmax">
+                        <div class="stat-icon tmax">
+                            <i data-lucide="thermometer-sun" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Temp Máxima</span>
+                            <span class="stat-value" id="stat-tmax-val">--</span>
+                            <span class="stat-sub" id="stat-tmax-sub">Cargando...</span>
+                        </div>
+                    </article>
+
+                    <!-- Tarjeta: Temp Mínima Histórica del periodo -->
+                    <article class="stat-card" id="stat-tmin">
+                        <div class="stat-icon tmin">
+                            <i data-lucide="thermometer-snowflake" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Temp Mínima</span>
+                            <span class="stat-value" id="stat-tmin-val">--</span>
+                            <span class="stat-sub" id="stat-tmin-sub">Cargando...</span>
+                        </div>
+                    </article>
+                </div>
+
+                <!-- Contenedor Principal de Gráficos -->
+                <div class="glass-card" style="padding: 24px;">
+                    <!-- Mensaje en caso de que no haya datos cargados en el excel (ej: La Primavera) -->
+                    <div id="no-data-warning" class="no-data-warning hidden">
+                        <div class="warning-icon">
+                            <i data-lucide="alert-circle" style="width: 36px; height: 36px;"></i>
+                        </div>
+                        <h3>Información Pendiente de Carga</h3>
+                        <p id="no-data-warning-text">Actualmente no hay un registro climático en formato Excel disponible en la carpeta de trabajo para esta localidad.</p>
+                    </div>
+
+                    <!-- Gráficos de Temperatura y Lluvia -->
+                    <div class="charts-grid" id="charts-grid">
+                        <div class="chart-card">
+                            <div class="chart-title">
+                                <span>Comportamiento de Temperaturas</span>
+                                <i data-lucide="activity" style="width: 18px; height: 18px; color: var(--temp-max);"></i>
+                            </div>
+                            <div class="chart-wrapper">
+                                <canvas id="tempChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="chart-card">
+                            <div class="chart-title">
+                                <span>Lluvia Registrada (Precipitación)</span>
+                                <i data-lucide="bar-chart-3" style="width: 18px; height: 18px; color: var(--primary);"></i>
+                            </div>
+                            <div class="chart-wrapper">
+                                <canvas id="precChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+
+        <!-- Pie de Página -->
+        <footer>
+            <p>
+                Visor Agroclimático PMA &copy; 2026 | Desarrollado para el <b>Agroclimatic Modeling Team (CGIAR)</b>
+            </p>
+            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">
+                Desplegado estáticamente en <a href="https://pages.github.com/" target="_blank" rel="noopener">GitHub Pages</a> utilizando SheetJS, Leaflet & Chart.js.
+            </p>
+        </footer>
+    </div>
+
+    <!-- CDNs de Librerías Externas (Lógica y scripts) -->
+    <!-- Leaflet para el mapa interactivo -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Chart.js (UMD Build para soportar scripts vanilla nativos) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- SheetJS para parseo de archivos Excel (.xlsx) de manera binaria -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Iconos Lucide modernos -->
+    <script src="https://unpkg.com/lucide@0.359.0/dist/umd/lucide.min.js"></script>
+
+    <!-- Código de inicialización y lógica dinámica -->
+    <script src="app.js"></script>
+</body>
+</html>
