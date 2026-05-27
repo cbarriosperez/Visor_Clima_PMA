@@ -19,7 +19,9 @@ let appState = {
     dailyData: [],      // Datos diarios cargados del Excel actual
     weeklyData: [],     // Datos agregados semanalmente
     monthlyData: [],    // Datos agregados mensualmente
-    currentScale: 'daily' // 'daily', 'weekly', 'monthly'
+    currentScale: 'daily', // 'daily', 'weekly', 'monthly'
+    filterStartDate: null, // Fecha de inicio del filtro (yyyy-MM-dd) o null
+    filterEndDate: null    // Fecha de fin del filtro (yyyy-MM-dd) o null
 };
 
 // Punto de Entrada Inicial
@@ -440,10 +442,12 @@ async function handleLocationSelection(name) {
         appState.weeklyData = aggregateWeekly(appState.dailyData);
         appState.monthlyData = aggregateMonthly(appState.dailyData);
         
-        // Actualizar estadísticas basadas en toda la serie de datos diarios
-        updateQuickStats(appState.dailyData);
+        // Reiniciar filtro de fechas y calendario
+        appState.filterStartDate = null;
+        appState.filterEndDate = null;
+        initDateRangePicker();
         
-        // Renderizar gráficos
+        // Renderizar gráficos (incluye actualización de estadísticas)
         renderDashboardData();
     } catch (err) {
         console.error(err);
@@ -473,15 +477,19 @@ function showNoDataWarning(show) {
  * Renderiza los gráficos en base a la escala seleccionada
  */
 function renderDashboardData() {
+    const filteredDaily = getFilteredDailyData();
     let activeDataset = [];
     
     if (appState.currentScale === 'daily') {
-        activeDataset = appState.dailyData;
+        activeDataset = filteredDaily;
     } else if (appState.currentScale === 'weekly') {
-        activeDataset = appState.weeklyData;
+        activeDataset = aggregateWeekly(filteredDaily);
     } else if (appState.currentScale === 'monthly') {
-        activeDataset = appState.monthlyData;
+        activeDataset = aggregateMonthly(filteredDaily);
     }
+    
+    // Actualizar estadísticas con datos filtrados
+    updateQuickStats(filteredDaily);
     
     if (activeDataset.length === 0) {
         return;
@@ -915,6 +923,9 @@ function setupEventListeners() {
             localStorage.setItem('infoBannerCollapsed', isCollapsed);
         });
     }
+
+    // Selector de rango de fechas (Calendario)
+    setupCalendarListeners();
 }
 
 /**
@@ -967,5 +978,449 @@ function updateChartsTheme() {
         precChart.options.scales.y.ticks.color = colors.textSecondary;
         precChart.options.scales.y.title.color = colors.textSecondary;
         precChart.update();
+    }
+}
+
+/**
+ * ==========================================================================
+ * SELECTOR DE RANGO DE FECHAS (CALENDARIO DUAL ESTILO AGENCIAS DE VIAJE)
+ * ==========================================================================
+ */
+
+const MONTH_NAMES_FULL = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+const calendarState = {
+    baseYear: 2026,
+    baseMonth: 0,
+    selectionStart: null,
+    selectionEnd: null,
+    hoveredDate: null,
+    isOpen: false,
+    dataMinDate: null,
+    dataMaxDate: null
+};
+
+/**
+ * Retorna los datos diarios filtrados por el rango de fechas seleccionado
+ */
+function getFilteredDailyData() {
+    let data = appState.dailyData;
+    if (appState.filterStartDate) {
+        data = data.filter(r => r.date >= appState.filterStartDate);
+    }
+    if (appState.filterEndDate) {
+        data = data.filter(r => r.date <= appState.filterEndDate);
+    }
+    return data;
+}
+
+/**
+ * Inicializa el calendario con los datos de la localidad activa
+ */
+function initDateRangePicker() {
+    if (appState.dailyData.length === 0) return;
+
+    const dates = appState.dailyData.map(r => r.date).sort();
+    calendarState.dataMinDate = dates[0];
+    calendarState.dataMaxDate = dates[dates.length - 1];
+
+    // Posicionar el calendario para mostrar los últimos dos meses de datos
+    const lastDate = new Date(calendarState.dataMaxDate + 'T00:00:00Z');
+    calendarState.baseYear = lastDate.getUTCFullYear();
+    calendarState.baseMonth = lastDate.getUTCMonth() - 1;
+    if (calendarState.baseMonth < 0) {
+        calendarState.baseMonth = 11;
+        calendarState.baseYear--;
+    }
+
+    calendarState.selectionStart = null;
+    calendarState.selectionEnd = null;
+    calendarState.hoveredDate = null;
+
+    updateTriggerDisplay();
+    renderCalendars();
+
+    // Resetear presets
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.preset === 'all') btn.classList.add('active');
+    });
+    updateDateRangeInfo('Selecciona la fecha de inicio');
+}
+
+/**
+ * Actualiza el texto del botón trigger con las fechas activas
+ */
+function updateTriggerDisplay() {
+    const startEl = document.getElementById('trigger-start-date');
+    const endEl = document.getElementById('trigger-end-date');
+    if (!startEl || !endEl) return;
+
+    if (appState.filterStartDate && appState.filterEndDate) {
+        startEl.textContent = formatDateFull(appState.filterStartDate);
+        endEl.textContent = formatDateFull(appState.filterEndDate);
+    } else if (calendarState.dataMinDate && calendarState.dataMaxDate) {
+        startEl.textContent = formatDateFull(calendarState.dataMinDate);
+        endEl.textContent = formatDateFull(calendarState.dataMaxDate);
+    } else {
+        startEl.textContent = '--';
+        endEl.textContent = '--';
+    }
+}
+
+/**
+ * Renderiza ambos meses del calendario dual
+ */
+function renderCalendars() {
+    renderMonth('cal-left-days', 'cal-left-title', calendarState.baseYear, calendarState.baseMonth);
+
+    let rightMonth = calendarState.baseMonth + 1;
+    let rightYear = calendarState.baseYear;
+    if (rightMonth > 11) {
+        rightMonth = 0;
+        rightYear++;
+    }
+    renderMonth('cal-right-days', 'cal-right-title', rightYear, rightMonth);
+}
+
+/**
+ * Renderiza los días de un mes individual en el contenedor indicado
+ */
+function renderMonth(containerId, titleId, year, month) {
+    const container = document.getElementById(containerId);
+    const title = document.getElementById(titleId);
+    if (!container || !title) return;
+
+    title.textContent = `${MONTH_NAMES_FULL[month]} ${year}`;
+
+    // Calcular offset para empezar en lunes
+    const firstDay = new Date(Date.UTC(year, month, 1)).getUTCDay();
+    const startOffset = firstDay === 0 ? 6 : firstDay - 1;
+    const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+
+    // Determinar rango de selección activo (incluye hover preview)
+    const selStart = calendarState.selectionStart;
+    const selEnd = calendarState.selectionEnd || calendarState.hoveredDate;
+    let rangeStart = selStart;
+    let rangeEnd = selEnd;
+    if (rangeStart && rangeEnd && rangeStart > rangeEnd) {
+        [rangeStart, rangeEnd] = [rangeEnd, rangeStart];
+    }
+
+    // Fecha de hoy
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    let html = '';
+
+    // Celdas vacías de offset
+    for (let i = 0; i < startOffset; i++) {
+        html += '<span class="cal-day empty"></span>';
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        let classes = ['cal-day'];
+
+        // Verificar si la fecha está dentro del rango de datos
+        const inDataRange = calendarState.dataMinDate && calendarState.dataMaxDate &&
+            dateStr >= calendarState.dataMinDate && dateStr <= calendarState.dataMaxDate;
+        if (!inDataRange) {
+            classes.push('disabled');
+        }
+
+        // Estados de selección
+        if (dateStr === selStart || dateStr === (calendarState.selectionEnd || '')) {
+            classes.push('selected-endpoint');
+        }
+        if (rangeStart && rangeEnd && dateStr > rangeStart && dateStr < rangeEnd) {
+            classes.push('in-range');
+        }
+        if (dateStr === rangeStart && rangeEnd) {
+            classes.push('range-start');
+        }
+        if (dateStr === rangeEnd && rangeStart) {
+            classes.push('range-end');
+        }
+
+        // Hoy
+        if (dateStr === todayStr) {
+            classes.push('today');
+        }
+
+        html += `<span class="${classes.join(' ')}" data-date="${dateStr}">${day}</span>`;
+    }
+
+    container.innerHTML = html;
+}
+
+/**
+ * Maneja el clic en un día del calendario
+ */
+function handleDayClick(dateStr) {
+    if (!calendarState.dataMinDate || dateStr < calendarState.dataMinDate || dateStr > calendarState.dataMaxDate) return;
+
+    if (!calendarState.selectionStart || calendarState.selectionEnd) {
+        // Iniciar nueva selección
+        calendarState.selectionStart = dateStr;
+        calendarState.selectionEnd = null;
+        calendarState.hoveredDate = null;
+        updateDateRangeInfo('Ahora selecciona la fecha final');
+    } else {
+        // Completar selección
+        if (dateStr < calendarState.selectionStart) {
+            calendarState.selectionEnd = calendarState.selectionStart;
+            calendarState.selectionStart = dateStr;
+        } else {
+            calendarState.selectionEnd = dateStr;
+        }
+        const days = daysBetween(calendarState.selectionStart, calendarState.selectionEnd);
+        updateDateRangeInfo(`${formatSimpleDate(calendarState.selectionStart)} → ${formatSimpleDate(calendarState.selectionEnd)} (${days + 1} días)`);
+    }
+
+    // Limpiar preset activo
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    renderCalendars();
+}
+
+/**
+ * Maneja hover sobre un día para previsualizar el rango
+ */
+function handleDayHover(dateStr) {
+    if (calendarState.selectionStart && !calendarState.selectionEnd) {
+        calendarState.hoveredDate = dateStr;
+        renderCalendars();
+    }
+}
+
+/**
+ * Aplica el rango de fechas seleccionado y filtra los datos
+ */
+function applyDateRange() {
+    if (calendarState.selectionStart && calendarState.selectionEnd) {
+        appState.filterStartDate = calendarState.selectionStart;
+        appState.filterEndDate = calendarState.selectionEnd;
+    } else if (calendarState.selectionStart) {
+        appState.filterStartDate = calendarState.selectionStart;
+        appState.filterEndDate = calendarState.selectionStart;
+    } else {
+        appState.filterStartDate = null;
+        appState.filterEndDate = null;
+    }
+
+    updateTriggerDisplay();
+    toggleCalendarDropdown(false);
+    renderDashboardData();
+}
+
+/**
+ * Limpia la selección y muestra todos los datos
+ */
+function clearDateRange() {
+    calendarState.selectionStart = null;
+    calendarState.selectionEnd = null;
+    calendarState.hoveredDate = null;
+    appState.filterStartDate = null;
+    appState.filterEndDate = null;
+
+    document.querySelectorAll('.preset-btn').forEach(b => {
+        b.classList.remove('active');
+        if (b.dataset.preset === 'all') b.classList.add('active');
+    });
+
+    updateTriggerDisplay();
+    updateDateRangeInfo('Selecciona la fecha de inicio');
+    renderCalendars();
+    renderDashboardData();
+}
+
+/**
+ * Aplica un preset de rango temporal rápido
+ */
+function applyPreset(preset) {
+    if (!calendarState.dataMaxDate) return;
+
+    if (preset === 'all') {
+        clearDateRange();
+        return;
+    }
+
+    const maxDate = calendarState.dataMaxDate;
+    const end = new Date(maxDate + 'T00:00:00Z');
+    let startDate;
+
+    if (preset === '7d') {
+        const s = new Date(end); s.setUTCDate(s.getUTCDate() - 6);
+        startDate = s.toISOString().split('T')[0];
+    } else if (preset === '30d') {
+        const s = new Date(end); s.setUTCDate(s.getUTCDate() - 29);
+        startDate = s.toISOString().split('T')[0];
+    } else if (preset === '90d') {
+        const s = new Date(end); s.setUTCDate(s.getUTCDate() - 89);
+        startDate = s.toISOString().split('T')[0];
+    } else if (preset === '6m') {
+        const s = new Date(end); s.setUTCMonth(s.getUTCMonth() - 6);
+        startDate = s.toISOString().split('T')[0];
+    }
+
+    // Limitar al rango mínimo de datos
+    if (startDate < calendarState.dataMinDate) {
+        startDate = calendarState.dataMinDate;
+    }
+
+    calendarState.selectionStart = startDate;
+    calendarState.selectionEnd = maxDate;
+
+    // Navegar calendario al final del rango
+    const endParsed = new Date(maxDate + 'T00:00:00Z');
+    calendarState.baseYear = endParsed.getUTCFullYear();
+    calendarState.baseMonth = endParsed.getUTCMonth() - 1;
+    if (calendarState.baseMonth < 0) {
+        calendarState.baseMonth = 11;
+        calendarState.baseYear--;
+    }
+
+    // Actualizar botones de preset
+    document.querySelectorAll('.preset-btn').forEach(b => {
+        b.classList.remove('active');
+        if (b.dataset.preset === preset) b.classList.add('active');
+    });
+
+    const days = daysBetween(startDate, maxDate);
+    updateDateRangeInfo(`${formatSimpleDate(startDate)} → ${formatSimpleDate(maxDate)} (${days + 1} días)`);
+    renderCalendars();
+
+    // Auto-aplicar
+    appState.filterStartDate = startDate;
+    appState.filterEndDate = maxDate;
+    updateTriggerDisplay();
+    renderDashboardData();
+}
+
+/**
+ * Abre o cierra el dropdown del calendario
+ */
+function toggleCalendarDropdown(forceState) {
+    const dropdown = document.getElementById('date-range-dropdown');
+    const trigger = document.getElementById('date-range-trigger');
+    if (!dropdown || !trigger) return;
+
+    calendarState.isOpen = forceState !== undefined ? forceState : !calendarState.isOpen;
+
+    if (calendarState.isOpen) {
+        dropdown.classList.add('open');
+        trigger.classList.add('active');
+        renderCalendars();
+    } else {
+        dropdown.classList.remove('open');
+        trigger.classList.remove('active');
+    }
+}
+
+function updateDateRangeInfo(text) {
+    const el = document.getElementById('date-range-info');
+    if (el) el.textContent = text;
+}
+
+function daysBetween(dateStr1, dateStr2) {
+    const d1 = new Date(dateStr1 + 'T00:00:00Z');
+    const d2 = new Date(dateStr2 + 'T00:00:00Z');
+    return Math.round(Math.abs((d2 - d1) / (1000 * 60 * 60 * 24)));
+}
+
+/**
+ * Registra todos los event listeners del calendario
+ */
+function setupCalendarListeners() {
+    // Botón trigger para abrir/cerrar
+    const trigger = document.getElementById('date-range-trigger');
+    if (trigger) {
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleCalendarDropdown();
+        });
+    }
+
+    // Cerrar al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        const picker = document.getElementById('date-range-picker');
+        if (picker && !picker.contains(e.target) && calendarState.isOpen) {
+            toggleCalendarDropdown(false);
+        }
+    });
+
+    // Navegación entre meses
+    const prevBtn = document.getElementById('cal-prev');
+    const nextBtn = document.getElementById('cal-next');
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            calendarState.baseMonth--;
+            if (calendarState.baseMonth < 0) {
+                calendarState.baseMonth = 11;
+                calendarState.baseYear--;
+            }
+            renderCalendars();
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            calendarState.baseMonth++;
+            if (calendarState.baseMonth > 11) {
+                calendarState.baseMonth = 0;
+                calendarState.baseYear++;
+            }
+            renderCalendars();
+        });
+    }
+
+    // Delegación de eventos para clics y hover en días del calendario
+    ['cal-left-days', 'cal-right-days'].forEach(id => {
+        const container = document.getElementById(id);
+        if (container) {
+            container.addEventListener('click', (e) => {
+                const day = e.target.closest('.cal-day:not(.empty):not(.disabled)');
+                if (day && day.dataset.date) {
+                    handleDayClick(day.dataset.date);
+                }
+            });
+            container.addEventListener('mouseover', (e) => {
+                const day = e.target.closest('.cal-day:not(.empty):not(.disabled)');
+                if (day && day.dataset.date) {
+                    handleDayHover(day.dataset.date);
+                }
+            });
+        }
+    });
+
+    // Botones de preset
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            applyPreset(e.currentTarget.dataset.preset);
+        });
+    });
+
+    // Botones Aplicar y Limpiar
+    const applyBtn = document.getElementById('date-range-apply');
+    const clearBtn = document.getElementById('date-range-clear');
+
+    if (applyBtn) {
+        applyBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            applyDateRange();
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            clearDateRange();
+            toggleCalendarDropdown(false);
+        });
     }
 }

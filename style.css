@@ -837,3 +837,438 @@ body:not(.light-theme) .moon-icon {
     opacity: 0;
     transform: rotate(-90deg) scale(0);
 }
+
+/* ==========================================================================
+   SELECTOR DE RANGO DE FECHAS (CALENDARIO ESTILO AGENCIAS DE VIAJE)
+   ========================================================================== */
+
+.date-range-picker {
+    position: relative;
+    margin-top: 14px;
+}
+
+.date-range-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+}
+
+.date-range-trigger:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: var(--primary);
+}
+
+.date-range-trigger.active {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-glow);
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.trigger-dates {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+    min-width: 0;
+}
+
+.trigger-date-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.trigger-date-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-secondary);
+}
+
+.trigger-date-value {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.trigger-separator {
+    color: var(--primary);
+    font-size: 1rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.trigger-chevron {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.date-range-trigger.active .trigger-chevron {
+    transform: rotate(180deg);
+}
+
+/* Dropdown Calendar Panel */
+.date-range-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    min-width: 580px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    backdrop-filter: blur(24px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    z-index: 50;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px) scale(0.98);
+    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.25s;
+    overflow: hidden;
+}
+
+.date-range-dropdown.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+/* Preset Buttons Bar */
+.date-range-presets {
+    display: flex;
+    gap: 6px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.02);
+    flex-wrap: wrap;
+}
+
+.preset-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    white-space: nowrap;
+}
+
+.preset-btn:hover {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.preset-btn.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+}
+
+/* Calendars Container (Dual Month) */
+.calendars-container {
+    display: flex;
+    padding: 16px;
+    gap: 0;
+}
+
+.calendar-divider {
+    width: 1px;
+    background: var(--border-color);
+    margin: 0 8px;
+    align-self: stretch;
+}
+
+.calendar-month {
+    flex: 1;
+    padding: 0 8px;
+}
+
+/* Calendar Navigation */
+.calendar-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 0 4px;
+}
+
+.cal-month-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+    flex: 1;
+}
+
+.cal-nav-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-smooth);
+}
+
+.cal-nav-btn:hover {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+/* Weekday Headers */
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 4px;
+}
+
+.calendar-weekdays span {
+    text-align: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 6px 0;
+}
+
+/* Calendar Day Grid */
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.cal-day {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, transform 0.15s;
+    color: var(--text-primary);
+    position: relative;
+    user-select: none;
+}
+
+.cal-day.empty {
+    cursor: default;
+}
+
+.cal-day.disabled {
+    color: rgba(255, 255, 255, 0.15);
+    cursor: not-allowed;
+}
+
+body.light-theme .cal-day.disabled {
+    color: rgba(0, 0, 0, 0.18);
+}
+
+.cal-day:not(.empty):not(.disabled):hover {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--primary);
+    transform: scale(1.12);
+}
+
+.cal-day.today {
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.cal-day.today::after {
+    content: '';
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background: var(--primary);
+    border-radius: 50%;
+}
+
+/* Selection States */
+.cal-day.selected-endpoint {
+    background: var(--primary) !important;
+    color: #fff !important;
+    font-weight: 700;
+    box-shadow: 0 2px 10px rgba(59, 130, 246, 0.45);
+    transform: scale(1.08);
+    z-index: 2;
+}
+
+.cal-day.in-range {
+    background: rgba(59, 130, 246, 0.12);
+    color: var(--primary);
+    border-radius: 0;
+}
+
+.cal-day.range-start {
+    border-radius: 8px 0 0 8px;
+}
+
+.cal-day.range-end {
+    border-radius: 0 8px 8px 0;
+}
+
+.cal-day.range-start.range-end {
+    border-radius: 8px;
+}
+
+/* Calendar Footer */
+.date-range-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.02);
+    gap: 12px;
+}
+
+.date-range-info {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    flex: 1;
+    min-width: 0;
+}
+
+.date-range-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.dr-btn {
+    padding: 7px 18px;
+    border-radius: 8px;
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    border: 1px solid transparent;
+}
+
+.dr-btn-clear {
+    background: transparent;
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+}
+
+.dr-btn-clear:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+    border-color: var(--danger);
+}
+
+.dr-btn-apply {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+.dr-btn-apply:hover {
+    background: hsl(210, 100%, 48%);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    transform: translateY(-1px);
+}
+
+/* Light Theme Overrides for Calendar */
+body.light-theme .date-range-trigger {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+body.light-theme .date-range-trigger:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+body.light-theme .date-range-trigger.active {
+    background: rgba(59, 130, 246, 0.04);
+}
+
+body.light-theme .date-range-dropdown {
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .cal-day:not(.empty):not(.disabled):hover {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+body.light-theme .cal-nav-btn {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+body.light-theme .cal-nav-btn:hover {
+    background: rgba(59, 130, 246, 0.08);
+}
+
+body.light-theme .preset-btn:hover {
+    background: rgba(59, 130, 246, 0.06);
+}
+
+body.light-theme .date-range-presets {
+    background: rgba(0, 0, 0, 0.015);
+}
+
+body.light-theme .date-range-footer {
+    background: rgba(0, 0, 0, 0.015);
+}
+
+/* Responsive: Stack calendars on small screens */
+@media (max-width: 640px) {
+    .calendars-container {
+        flex-direction: column;
+    }
+    .calendar-divider {
+        width: 100%;
+        height: 1px;
+        margin: 8px 0;
+    }
+    .date-range-dropdown {
+        min-width: unset;
+    }
+    .trigger-dates {
+        gap: 8px;
+    }
+    .trigger-date-value {
+        font-size: 0.8rem;
+    }
+    .date-range-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .date-range-actions {
+        justify-content: flex-end;
+    }
+}

@@ -115,6 +115,68 @@
                             <button class="tab-btn" data-scale="monthly" aria-label="Ver agregación mensual">Mensual</button>
                         </div>
                     </div>
+
+                    <!-- Selector de Rango de Fechas (Calendario estilo agencias de viaje) -->
+                    <div class="date-range-picker" id="date-range-picker">
+                        <button class="date-range-trigger" id="date-range-trigger" type="button" aria-label="Abrir selector de rango de fechas">
+                            <div class="trigger-dates">
+                                <i data-lucide="calendar-range" style="width: 18px; height: 18px; color: var(--primary); flex-shrink: 0;"></i>
+                                <div class="trigger-date-group">
+                                    <span class="trigger-date-label">Desde</span>
+                                    <span class="trigger-date-value" id="trigger-start-date">--</span>
+                                </div>
+                                <span class="trigger-separator">→</span>
+                                <div class="trigger-date-group">
+                                    <span class="trigger-date-label">Hasta</span>
+                                    <span class="trigger-date-value" id="trigger-end-date">--</span>
+                                </div>
+                            </div>
+                            <i data-lucide="chevron-down" class="trigger-chevron" style="width: 16px; height: 16px; color: var(--text-secondary); flex-shrink: 0;"></i>
+                        </button>
+                        <div class="date-range-dropdown" id="date-range-dropdown">
+                            <div class="date-range-presets">
+                                <button class="preset-btn active" data-preset="all">Todo</button>
+                                <button class="preset-btn" data-preset="7d">7 días</button>
+                                <button class="preset-btn" data-preset="30d">30 días</button>
+                                <button class="preset-btn" data-preset="90d">3 meses</button>
+                                <button class="preset-btn" data-preset="6m">6 meses</button>
+                            </div>
+                            <div class="calendars-container">
+                                <div class="calendar-month">
+                                    <div class="calendar-nav">
+                                        <button class="cal-nav-btn" id="cal-prev" type="button" aria-label="Mes anterior">
+                                            <i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i>
+                                        </button>
+                                        <span class="cal-month-title" id="cal-left-title"></span>
+                                    </div>
+                                    <div class="calendar-weekdays">
+                                        <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
+                                    </div>
+                                    <div class="calendar-days" id="cal-left-days"></div>
+                                </div>
+                                <div class="calendar-divider"></div>
+                                <div class="calendar-month">
+                                    <div class="calendar-nav">
+                                        <span class="cal-month-title" id="cal-right-title"></span>
+                                        <button class="cal-nav-btn" id="cal-next" type="button" aria-label="Mes siguiente">
+                                            <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i>
+                                        </button>
+                                    </div>
+                                    <div class="calendar-weekdays">
+                                        <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
+                                    </div>
+                                    <div class="calendar-days" id="cal-right-days"></div>
+                                </div>
+                            </div>
+                            <div class="date-range-footer">
+                                <span class="date-range-info" id="date-range-info">Selecciona la fecha de inicio</span>
+                                <div class="date-range-actions">
+                                    <button class="dr-btn dr-btn-clear" id="date-range-clear" type="button">Limpiar</button>
+                                    <button class="dr-btn dr-btn-apply" id="date-range-apply" type="button">Aplicar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Fila de Estadísticas Rápidas -->
