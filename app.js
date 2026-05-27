@@ -1352,7 +1352,8 @@ function setupCalendarListeners() {
     // Cerrar al hacer clic fuera
     document.addEventListener('click', (e) => {
         const picker = document.getElementById('date-range-picker');
-        if (picker && !picker.contains(e.target) && calendarState.isOpen) {
+        // Si el elemento clickeado fue eliminado del DOM (ej. al re-renderizar el calendario), no cerramos el menú
+        if (picker && !picker.contains(e.target) && calendarState.isOpen && e.target.isConnected) {
             toggleCalendarDropdown(false);
         }
     });
