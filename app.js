@@ -1167,6 +1167,10 @@ function handleDayClick(dateStr) {
         calendarState.selectionEnd = null;
         calendarState.hoveredDate = null;
         updateDateRangeInfo('Ahora selecciona la fecha final');
+        
+        // Limpiar preset activo
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+        renderCalendars();
     } else {
         // Completar selección
         if (dateStr < calendarState.selectionStart) {
@@ -1177,11 +1181,14 @@ function handleDayClick(dateStr) {
         }
         const days = daysBetween(calendarState.selectionStart, calendarState.selectionEnd);
         updateDateRangeInfo(`${formatSimpleDate(calendarState.selectionStart)} → ${formatSimpleDate(calendarState.selectionEnd)} (${days + 1} días)`);
+        
+        // Limpiar preset activo
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+        renderCalendars();
+        
+        // Auto-aplicar filtro y cerrar calendario al seleccionar ambas fechas
+        applyDateRange();
     }
-
-    // Limpiar preset activo
-    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-    renderCalendars();
 }
 
 /**
