@@ -115,9 +115,61 @@
                             <button class="tab-btn" data-scale="monthly" aria-label="Ver agregación mensual">Mensual</button>
                         </div>
                     </div>
+                </div>
 
+                <!-- Fila de Estadísticas Rápidas -->
+                <div class="stats-row">
+                    <!-- Tarjeta: Lluvia Acumulada -->
+                    <article class="stat-card" id="stat-prec">
+                        <div class="stat-icon prec">
+                            <i data-lucide="droplets" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Lluvia Total</span>
+                            <span class="stat-value" id="stat-prec-val">--</span>
+                            <span class="stat-sub" id="stat-prec-sub">Cargando...</span>
+                        </div>
+                    </article>
+
+                    <!-- Tarjeta: Temp Máxima Histórica del periodo -->
+                    <article class="stat-card" id="stat-tmax">
+                        <div class="stat-icon tmax">
+                            <i data-lucide="thermometer-sun" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Temp Máxima</span>
+                            <span class="stat-value" id="stat-tmax-val">--</span>
+                            <span class="stat-sub" id="stat-tmax-sub">Cargando...</span>
+                        </div>
+                    </article>
+
+                    <!-- Tarjeta: Temp Mínima Histórica del periodo -->
+                    <article class="stat-card" id="stat-tmin">
+                        <div class="stat-icon tmin">
+                            <i data-lucide="thermometer-snowflake" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Temp Mínima</span>
+                            <span class="stat-value" id="stat-tmin-val">--</span>
+                            <span class="stat-sub" id="stat-tmin-sub">Cargando...</span>
+                        </div>
+                    </article>
+                </div>
+
+                <!-- Contenedor de Filtro Temporal -->
+                <div class="glass-card" style="padding: 16px 24px; position: relative; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+                    <div>
+                        <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="calendar-clock" style="width: 18px; height: 18px; color: var(--primary);"></i>
+                            Filtro Temporal
+                        </h3>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
+                            Selecciona el periodo de fechas para visualizar en los gráficos
+                        </p>
+                    </div>
+                    
                     <!-- Selector de Rango de Fechas (Calendario estilo agencias de viaje) -->
-                    <div class="date-range-picker" id="date-range-picker">
+                    <div class="date-range-picker" id="date-range-picker" style="margin-top: 0; min-width: 320px; flex: 1; max-width: 400px;">
                         <button class="date-range-trigger" id="date-range-trigger" type="button" aria-label="Abrir selector de rango de fechas">
                             <div class="trigger-dates">
                                 <i data-lucide="calendar-range" style="width: 18px; height: 18px; color: var(--primary); flex-shrink: 0;"></i>
@@ -179,47 +231,8 @@
                     </div>
                 </div>
 
-                <!-- Fila de Estadísticas Rápidas -->
-                <div class="stats-row">
-                    <!-- Tarjeta: Lluvia Acumulada -->
-                    <article class="stat-card" id="stat-prec">
-                        <div class="stat-icon prec">
-                            <i data-lucide="droplets" style="width: 24px; height: 24px;"></i>
-                        </div>
-                        <div class="stat-info">
-                            <span class="stat-label">Lluvia Total</span>
-                            <span class="stat-value" id="stat-prec-val">--</span>
-                            <span class="stat-sub" id="stat-prec-sub">Cargando...</span>
-                        </div>
-                    </article>
-
-                    <!-- Tarjeta: Temp Máxima Histórica del periodo -->
-                    <article class="stat-card" id="stat-tmax">
-                        <div class="stat-icon tmax">
-                            <i data-lucide="thermometer-sun" style="width: 24px; height: 24px;"></i>
-                        </div>
-                        <div class="stat-info">
-                            <span class="stat-label">Temp Máxima</span>
-                            <span class="stat-value" id="stat-tmax-val">--</span>
-                            <span class="stat-sub" id="stat-tmax-sub">Cargando...</span>
-                        </div>
-                    </article>
-
-                    <!-- Tarjeta: Temp Mínima Histórica del periodo -->
-                    <article class="stat-card" id="stat-tmin">
-                        <div class="stat-icon tmin">
-                            <i data-lucide="thermometer-snowflake" style="width: 24px; height: 24px;"></i>
-                        </div>
-                        <div class="stat-info">
-                            <span class="stat-label">Temp Mínima</span>
-                            <span class="stat-value" id="stat-tmin-val">--</span>
-                            <span class="stat-sub" id="stat-tmin-sub">Cargando...</span>
-                        </div>
-                    </article>
-                </div>
-
                 <!-- Contenedor Principal de Gráficos -->
-                <div class="glass-card" style="padding: 24px;">
+                <div class="glass-card" style="padding: 24px; position: relative; z-index: 10;">
                     <!-- Mensaje en caso de que no haya datos cargados en el excel (ej: La Primavera) -->
                     <div id="no-data-warning" class="no-data-warning hidden">
                         <div class="warning-icon">

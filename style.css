@@ -925,8 +925,8 @@ body:not(.light-theme) .moon-icon {
 .date-range-dropdown {
     position: absolute;
     top: calc(100% + 8px);
-    left: 0;
     right: 0;
+    left: auto;
     min-width: 580px;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
