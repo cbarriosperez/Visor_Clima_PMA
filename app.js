@@ -896,6 +896,25 @@ function setupEventListeners() {
             updateChartsTheme();
         });
     }
+
+    // Botón de colapsar/expandir el banner informativo
+    const infoBanner = document.getElementById('info-banner');
+    const infoToggleBtn = document.getElementById('info-toggle-btn');
+    if (infoBanner && infoToggleBtn) {
+        // Restaurar estado guardado
+        const bannerCollapsed = localStorage.getItem('infoBannerCollapsed') === 'true';
+        if (bannerCollapsed) {
+            infoBanner.classList.add('collapsed');
+        }
+        
+        // Hacer clic tanto en el botón como en el encabezado
+        const infoHeader = infoBanner.querySelector('.info-banner-header');
+        infoHeader.addEventListener('click', () => {
+            infoBanner.classList.toggle('collapsed');
+            const isCollapsed = infoBanner.classList.contains('collapsed');
+            localStorage.setItem('infoBannerCollapsed', isCollapsed);
+        });
+    }
 }
 
 /**
